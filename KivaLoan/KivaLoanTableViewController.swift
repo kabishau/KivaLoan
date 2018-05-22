@@ -30,23 +30,25 @@ class KivaLoanTableViewController: UITableViewController {
         }
         task.resume()
     }
-    
+    /*
     func parseJsonData(data: Data) -> [Loan] {
         
         var loans = [Loan]()
-        
         do {
             let jsonResult = try JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers) as? NSDictionary
             
             // parse JSON data
             let jsonLoans = jsonResult?["loans"] as! [AnyObject]
-            
+            print(jsonLoans)
             for jsonLoan in jsonLoans {
                 var loan = Loan()
                 loan.name = jsonLoan["name"] as! String
                 loan.amount = jsonLoan["loan_amount"] as! Int
                 loan.use = jsonLoan["use"] as! String
-                loan.country = jsonLoan["country"] as! String
+                if let location = jsonLoan["location"] as? NSDictionary {
+                    loan.country = location["country"] as! String
+                }
+ 
                 loans.append(loan)
             }
             
@@ -55,32 +57,52 @@ class KivaLoanTableViewController: UITableViewController {
         }
         
         return loans
+ 
+    }
+    */
+    
+    func parseJsonData(data: Data) -> [Loan] {
+        var loans = [Loan]()
+        let decoder = JSONDecoder()
+        do {
+            let loanDataStore = try decoder.decode(LoanDataStore.self, from: data)
+            loans = loanDataStore.loans
+        } catch {
+            print(error)
+        }
+        return loans
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
+        // row/cell height
         tableView.estimatedRowHeight = 92.0
         tableView.rowHeight = UITableViewAutomaticDimension
+        
+        getLatestLoans()
     }
 
     // MARK: - Table view data source
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         // Return the number of sections
-        return 0
+        return 1
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // Return the number of rows
-        return 0
+        return loans.count
     }
 
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as! KivaLoanTableViewCell
 
-        // Configure the cell...
+        cell.nameLabel.text = loans[indexPath.row].name
+        cell.countryLabel.text = loans[indexPath.row].country
+        cell.useLabel.text = loans[indexPath.row].use
+        cell.amountLabel.text = "$\(loans[indexPath.row].amount)"
 
         return cell
     }
